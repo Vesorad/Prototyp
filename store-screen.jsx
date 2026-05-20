@@ -1,0 +1,232 @@
+// store-screen.jsx
+function StoreScreen({ state, setState, onLeave, helgaX = 0, helgaY = 0, helgaScale = 1, onHelgaPos }) {
+  const [tab, setTab] = React.useState('sell'); // sell | bait | upgrades
+  const [flirting, setFlirting] = React.useState(false);
+  const [posTool, setPosTool] = React.useState(true); // show position tool
+
+  // Sell all
+  const totalSale = state.catches.reduce((s, f) => s + (f.value || 0), 0);
+  const totalWeight = state.catches.reduce((s, f) => s + f.weight, 0);
+
+  const handleSellAll = () => {
+    setState(s => ({
+      ...s,
+      money: s.money + totalSale,
+      catches: s.catches.filter(f => f.quest), // keep quest fish? actually they have value 0, just clear all
+    }));
+    // Clear all common fish, keep nothing (quest fish already accounted as progress)
+    setState(s => ({ ...s, catches: [] }));
+  };
+
+  // Group catches by species for the sell list
+  const grouped = React.useMemo(() => {
+    const map = {};
+    state.catches.forEach(f => {
+      if (!map[f.species]) map[f.species] = { name: f.name, color: f.color, img: f.img, count: 0, total: 0, weight: 0 };
+      map[f.species].count++;
+      map[f.species].total += f.value;
+      map[f.species].weight += f.weight;
+    });
+    return Object.values(map);
+  }, [state.catches]);
+
+  const canBuyUpgrade = (u) => {
+    if (state.upgrades.includes(u.id)) return false;
+    if (u.requires && !state.upgrades.includes(u.requires)) return false;
+    if (state.money < u.price) return false;
+    return true;
+  };
+
+  const buyUpgrade = (u) => {
+    if (!canBuyUpgrade(u)) return;
+    setState(s => {
+      const next = { ...s, money: s.money - u.price, upgrades: [...s.upgrades, u.id] };
+      if (u.kind === 'capacity') next.capacity = u.value;
+      if (u.kind === 'line') next.hasBetterLine = true;
+      if (u.kind === 'rod') next.hasRodUpgrade = true;
+      return next;
+    });
+  };
+
+  const buyBait = (b) => {
+    if (state.money < b.price) return;
+    setState(s => ({
+      ...s,
+      money: s.money - b.price,
+      hasQuestBait: true,
+      questBaits: s.questBaits + 1,
+    }));
+  };
+
+  return (
+    <div className="scene store-screen" data-screen-label="05 Store">
+      <div className="store-bg"></div>
+      <div className="store-counter"></div>
+      <TopHud state={state} />
+
+      {flirting && <FlirtChat onClose={() => setFlirting(false)} />}
+
+      <div className="store-frame">
+        {/* Portrait side */}
+        <div className="store-portrait">
+          <div className="char-placeholder" style={{paddingBottom: 16}}>
+            <img
+              className="char-img helga-portrait-img"
+              src={CHARACTERS.helga.img}
+              alt="Helga"
+              draggable={false}
+              style={{
+                width: '100%',
+                height: '78%',
+                objectFit: 'contain',
+                objectPosition: 'bottom',
+                marginBottom: 10,
+                transform: `translate(${helgaX}px, ${helgaY}px) scale(${helgaScale})`,
+                transformOrigin: 'center bottom',
+                userSelect: 'none',
+                WebkitUserDrag: 'none',
+                position: 'relative',
+                zIndex: 1,
+                pointerEvents: 'none',
+              }}
+            />
+            <div className="char-name" style={{color:'#fff5dd', position:'relative', zIndex:2}}>Helga</div>
+            <div className="char-tag" style={{position:'relative', zIndex:2}}>Shop · Fish Buyer</div>
+            <div style={{
+              marginTop: 14, background:'rgba(20,12,8,.62)', color:'#fff5dd',
+              padding:'10px 14px', borderRadius:12, fontSize:13, lineHeight:1.5,
+              maxWidth: 280, textAlign:'center', border:'1px solid rgba(255,245,221,.18)',
+              position:'relative', zIndex: 2,
+            }}>
+              {state.catches.length > 0
+                ? '"Show me what you got, kid. I\'ll buy regular fish on the spot — for the special ones, you need the blood lure."'
+                : state.questFishCaught === 0
+                  ? '"Marina won\'t catch perch without the blood lure. My worms have a certain... flavor."'
+                  : state.questFishCaught >= 3
+                    ? '"I heard about those perch of yours. Marina\'s looking for you — get back to her."'
+                    : '"Doing well, kid. Don\'t forget about your line — those perch can really pull."'}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="store-panel">
+          <div className="store-tabs">
+            <button className={`store-tab ${tab==='sell'?'active':''}`} onClick={() => setTab('sell')}>
+              Sell {state.catches.length > 0 && `(${state.catches.length})`}
+            </button>
+            <button className={`store-tab ${tab==='bait'?'active':''}`} onClick={() => setTab('bait')}>
+              Bait
+            </button>
+            <button className={`store-tab ${tab==='upgrades'?'active':''}`} onClick={() => setTab('upgrades')}>
+              Upgrades
+            </button>
+            <button className="store-tab flirt-tab" onClick={() => setFlirting(true)}>
+              <span className="flirt-pulse">Flirt</span>
+            </button>
+          </div>
+
+          {tab === 'sell' && (
+            <>
+              <div className="store-list">
+                {grouped.length === 0 && <div className="store-empty">No fish in the crate.</div>}
+                {grouped.map((g, i) => (
+                  <div key={i} className="store-item">
+                    <div className="ic-box">
+                      {g.img
+                        ? <img src={g.img} alt={g.name} className="ic-img-store"/>
+                        : <div className="item-fish" style={{ '--it-color': g.color }}></div>}
+                    </div>
+                    <div className="meta">
+                      <div className="name">{g.name} <span style={{opacity:.5, fontWeight:400, fontSize:13}}>× {g.count}</span></div>
+                      <div className="desc">{(g.weight/1000).toFixed(2)} kg total</div>
+                    </div>
+                    <div className="price">${g.total}</div>
+                  </div>
+                ))}
+              </div>
+              {totalSale > 0 && (
+                <button className="btn primary" onClick={handleSellAll} style={{alignSelf:'stretch', justifyContent:'center'}}>
+                  Sell everything — {fmtMoney(totalSale)}
+                </button>
+              )}
+            </>
+          )}
+
+          {tab === 'bait' && (
+            <div className="store-list">
+              {SHOP_BAITS.map(b => (
+                <div key={b.id} className="store-item">
+                  <div className="ic-box">
+                    {b.img
+                      ? <img src={b.img} alt={b.name} className="ic-img-shop"/>
+                      : <span style={{fontSize:22}}>🪱</span>}
+                  </div>
+                  <div className="meta">
+                    <div className="name">{b.name} {b.badge && <span className="badge">{b.badge}</span>}</div>
+                    <div className="desc">{b.desc}{state.questBaits>0 && ` · Owned: ×${state.questBaits}`}</div>
+                  </div>
+                  <div className="price">{fmtMoney(b.price)}</div>
+                  <button
+                    className="btn"
+                    disabled={state.money < b.price}
+                    onClick={() => buyBait(b)}
+                  >
+                    Buy
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === 'upgrades' && (
+            <div className="store-list">
+              {SHOP_UPGRADES.map(u => {
+                const owned = state.upgrades.includes(u.id);
+                const locked = u.requires && !state.upgrades.includes(u.requires);
+                return (
+                  <div key={u.id} className={`store-item ${owned ? 'owned' : ''}`}>
+                    <div className="ic-box">
+                      {u.img
+                        ? <img src={u.img} alt={u.name} className="ic-img-shop"/>
+                        : <span style={{fontSize:22}}>
+                            {u.kind==='capacity'?'📦':u.kind==='line'?'🧵':'🎣'}
+                          </span>}
+                    </div>
+                    <div className="meta">
+                      <div className="name">{u.name}</div>
+                      <div className="desc">
+                        {u.desc}
+                        {locked && <span style={{color:'var(--rust)'}}> · Requires: {u.requires}</span>}
+                      </div>
+                    </div>
+                    <div className="price">{owned ? '—' : fmtMoney(u.price)}</div>
+                    <button
+                      className="btn"
+                      disabled={!canBuyUpgrade(u)}
+                      onClick={() => buyUpgrade(u)}
+                    >
+                      {owned ? '✓ Owned' : 'Buy'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="store-totals">
+            <div>
+              <div className="lbl">Your coins</div>
+              <div className="val">{fmtMoney(state.money)}</div>
+            </div>
+            <button className="btn primary" onClick={onLeave}>
+              ⛵ Set sail again
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+window.StoreScreen = StoreScreen;
