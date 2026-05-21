@@ -45,9 +45,33 @@ function App() {
   const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS);
   const [state, setState] = React.useState(INITIAL_STATE);
   const [screen, setScreen] = React.useState('map');
-  const [dialog, setDialog] = React.useState(null);   // { character, lines, onDone }
+  const [dialog, setDialog] = React.useState(null);   // { character, lines, onDone, cutscene }
+  const [cutscene, setCutscene] = React.useState(null); // { src, onContinue }
   const [toast, setToast] = React.useState(null);
   const [blackout, setBlackout] = React.useState(false);
+
+  // Helper — runs a dialog, then (optionally) its cutscene, then onDone.
+  // Pass `cutscene: 'assets/scenes/x.mp4'` on a dialog config to chain.
+  const openDialog = (cfg) => {
+    const { cutscene: csSrc, onDone, ...rest } = cfg;
+    setDialog({
+      ...rest,
+      onDone: () => {
+        setDialog(null);
+        if (csSrc) {
+          setCutscene({
+            src: csSrc,
+            onContinue: () => {
+              setCutscene(null);
+              onDone && onDone();
+            },
+          });
+        } else {
+          onDone && onDone();
+        }
+      },
+    });
+  };
 
   // Apply tweak: jump to a specific screen at startup
   const firstRunRef = React.useRef(true);
@@ -100,13 +124,13 @@ function App() {
     if (state.introSeen) {
       fadeTo('boat');
     } else {
-      // open intro dialog over the map
-      setDialog({
+      // open intro dialog over the map → then play the scene
+      openDialog({
         character: 'marina',
         side: 'left',
         lines: INTRO_LINES,
+        cutscene: 'assets/scenes/s_4.mp4',
         onDone: () => {
-          setDialog(null);
           setState(s => ({ ...s, introSeen: true }));
           fadeTo('boat');
         },
@@ -122,11 +146,11 @@ function App() {
     if (fish.quest && !state.firstQuestCelebrated) {
       // schedule dialog after returning to boat
       setTimeout(() => {
-        setDialog({
+        openDialog({
           character: 'marina',
           lines: FIRST_QUEST_LINES,
+          cutscene: 'assets/scenes/s_4.mp4',
           onDone: () => {
-            setDialog(null);
             setState(s => ({ ...s, firstQuestCelebrated: true }));
           },
         });
@@ -137,11 +161,11 @@ function App() {
   const handleQuestFail = (cfg) => {
     if (cfg.forceLoss && !state.secondQuestFailSeen) {
       setTimeout(() => {
-        setDialog({
+        openDialog({
           character: 'marina',
           lines: SECOND_FAIL_LINES,
+          cutscene: 'assets/scenes/s_4.mp4',
           onDone: () => {
-            setDialog(null);
             setState(s => ({ ...s, secondQuestFailSeen: true }));
           },
         });
@@ -156,11 +180,11 @@ function App() {
         // small delay then trigger ending dialog
       });
       setTimeout(() => {
-        setDialog({
+        openDialog({
           character: 'marina',
           lines: ENDING_DIALOG_LINES,
+          cutscene: 'assets/scenes/s_4.mp4',
           onDone: () => {
-            setDialog(null);
             fadeTo('ending');
           },
         });
@@ -245,6 +269,10 @@ function App() {
         side={dialog.side || 'left'}
         lines={dialog.lines}
         onDone={dialog.onDone}
+      />}
+      {cutscene && <Cutscene
+        src={cutscene.src}
+        onContinue={cutscene.onContinue}
       />}
       {toast && <Toast onDone={() => setToast(null)}>{toast}</Toast>}
       <div className={`blackout ${blackout ? 'on' : ''}`}></div>

@@ -67,11 +67,19 @@ const FLIRT_TREE = /*FLIRTMODE-BEGIN*/{
   },
 }/*FLIRTMODE-END*/;
 
+// Map of which starting response triggers which cutscene
+const FLIRT_CUTSCENES = {
+  p_open_a: 'assets/scenes/s_1.mp4',
+  p_open_b: 'assets/scenes/s_2.mp4',
+  p_open_c: 'assets/scenes/s_3.mp4',
+};
+
 function FlirtChat({ onClose }) {
   const [history, setHistory] = React.useState([]);  // [{from, text}, ...]
   const [currentId, setCurrentId] = React.useState(FLIRT_TREE.start);
   const [waiting, setWaiting] = React.useState(true); // typing indicator
   const [showResponses, setShowResponses] = React.useState(false);
+  const [pickedBranch, setPickedBranch] = React.useState(null); // 'p_open_a' | 'p_open_b' | 'p_open_c'
   const scrollRef = React.useRef(null);
 
   // Advance through the tree — drop the current node into history,
@@ -112,16 +120,30 @@ function FlirtChat({ onClose }) {
   const isEnd = node && !node.responses && !node.next && !waiting;
 
   const pickResponse = (id) => {
+    // Remember which of the 3 starting responses the player picked,
+    // so the right post-flirt cutscene plays on close.
+    if (FLIRT_CUTSCENES[id] && pickedBranch == null) {
+      setPickedBranch(id);
+    }
     setCurrentId(id);
+  };
+
+  // Hand the picked branch up to the parent on close, so it can play the
+  // matching cutscene. If the player didn't pick any of the 3 starters,
+  // close cleanly with no scene.
+  const handleClose = () => {
+    const cutscene = pickedBranch ? FLIRT_CUTSCENES[pickedBranch] : null;
+    onClose && onClose({ branch: pickedBranch, cutscene });
   };
 
   const restart = () => {
     setHistory([]);
+    setPickedBranch(null);
     setCurrentId(FLIRT_TREE.start);
   };
 
   return (
-    <div className="flirt-overlay" onClick={onClose}>
+    <div className="flirt-overlay" onClick={handleClose}>
       <div className="flirt-window" onClick={e => e.stopPropagation()}>
         {/* header */}
         <div className="flirt-header">
@@ -135,7 +157,7 @@ function FlirtChat({ onClose }) {
               {waiting ? 'typing…' : 'online · at the counter'}
             </div>
           </div>
-          <button className="flirt-close" onClick={onClose}>×</button>
+          <button className="flirt-close" onClick={handleClose}>×</button>
         </div>
 
         {/* messages */}
@@ -172,7 +194,7 @@ function FlirtChat({ onClose }) {
               <div className="flirt-end-text">— end of chat —</div>
               <div style={{display:'flex', gap: 8}}>
                 <button className="btn ghost" onClick={restart} style={{fontSize:12, padding:'8px 14px'}}>↻ Restart</button>
-                <button className="btn primary" onClick={onClose} style={{fontSize:12, padding:'8px 14px'}}>Close</button>
+                <button className="btn primary" onClick={handleClose} style={{fontSize:12, padding:'8px 14px'}}>Close</button>
               </div>
             </div>
           )}
