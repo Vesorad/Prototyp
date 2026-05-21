@@ -116,31 +116,38 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
     fightRefs.current.reeling = false;
   }, [phase]);
 
+  // Keep ambient shadows swimming during both guide and fight phases.
+  // (In fight phase non-hooked shadows are decorative — they keep moving but don't interact.)
   React.useEffect(() => {
-    if (phase !== 'guide') return;
+    if (phase !== 'guide' && phase !== 'fight') return;
     let last = performance.now();
+    let rafId;
     const tick = (now) => {
-      if (phaseRef.current !== 'guide') return;
+      const p = phaseRef.current;
+      if (p !== 'guide' && p !== 'fight') return;
       const dt = Math.min(0.05, (now - last) / 1000) * gameSpeed;
       last = now;
 
-      // update lure
-      setLure(lr => {
-        let { x, y } = lr;
-        const reeling = reelingRef.current;
-        if (reeling) {
-          x -= REEL_BACK_RATE * dt;
-          y -= REEL_LIFT * dt;
-        } else {
-          y += (selectedBait?.sinkSpeed || LURE_SINK) * 0.014 * 100 * dt;
-        }
-        y = Math.max(24, Math.min(92, y));
-        x = Math.max(20, Math.min(96, x));
-        return { x, y };
-      });
+      // lure only moves during guide — fight phase locks the lure into the hooked fish
+      if (p === 'guide') {
+        setLure(lr => {
+          let { x, y } = lr;
+          const reeling = reelingRef.current;
+          if (reeling) {
+            x -= REEL_BACK_RATE * dt;
+            y -= REEL_LIFT * dt;
+          } else {
+            y += (selectedBait?.sinkSpeed || LURE_SINK) * 0.014 * 100 * dt;
+          }
+          y = Math.max(24, Math.min(92, y));
+          x = Math.max(20, Math.min(96, x));
+          return { x, y };
+        });
+      }
 
-      // update shadows
+      // ambient shadow swim (skip the hooked one — it's pinned to fightDist)
       setShadows(sh => sh.map(s => {
+        if (p === 'fight' && s.id === hookedShadow) return s;
         let { x, y, vx, vy } = s;
         x += vx * dt;
         y += vy * dt;
@@ -151,13 +158,13 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
         return { ...s, x, y, vx, vy };
       }));
 
-      guideRafRef.current = requestAnimationFrame(tick);
+      rafId = requestAnimationFrame(tick);
     };
-    guideRafRef.current = requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
     return () => {
-      cancelAnimationFrame(guideRafRef.current);
+      cancelAnimationFrame(rafId);
     };
-  }, [phase, gameSpeed, selectedBait]);
+  }, [phase, gameSpeed, selectedBait, hookedShadow]);
 
   // bite detection — any lure↔shadow overlap = instant hookup
   React.useEffect(() => {
@@ -354,6 +361,60 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
     };
   }
 
+  // ===== Keyboard shortcuts =====
+  // SPACE / ENTER  → reel (works during guide & fight — alternative to mouse hold)
+  // ESC            → close active fishing
+  // ← / →          → cycle baits in bait picker
+  // ENTER          → confirm bait pick / cast result primary action
+  const [showKeys, setShowKeys] = React.useState(true);
+  React.useEffect(() => {
+    const isReelKey = (e) => e.code === 'Space' || e.key === ' ';
+
+    const onKeyDown = (e) => {
+      // ignore when typing
+      if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose && onClose();
+        return;
+      }
+
+      // reel-hold key (Space)
+      if (isReelKey(e) && !e.repeat) {
+        e.preventDefault();
+        if (phaseRef.current === 'guide') reelingRef.current = true;
+        if (phaseRef.current === 'fight') fightRefs.current.reeling = true;
+        return;
+      }
+    };
+    const onKeyUp = (e) => {
+      if (isReelKey(e)) {
+        e.preventDefault();
+        reelingRef.current = false;
+        fightRefs.current.reeling = false;
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [onClose]);
+
+  // shortcuts visible in this phase
+  const phaseShortcuts = (() => {
+    switch (phase) {
+      case 'bait':   return [['ESC', 'Close']];
+      case 'charge': return [['Hold mouse', 'Charge cast'], ['Release', 'Cast'], ['ESC', 'Close']];
+      case 'guide':  return [['Hold mouse / Space', 'Reel'], ['Release', 'Let lure sink'], ['ESC', 'Close']];
+      case 'fight':  return [['Hold mouse / Space', 'Reel (when resting!)'], ['Release', 'Let line go slack'], ['ESC', 'Close']];
+      case 'result': return [['ESC', 'Close']];
+      default: return [];
+    }
+  })();
+
   // ===== Render =====
   return (
     <div className="af-scene" data-screen-label="04 Active Fishing">
@@ -523,6 +584,27 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
         <button className="af-tools-reopen" onClick={() => setToolsShow(true)} style={{display:'none'}}>⇲ tools</button>
       )}
 
+      {/* Keyboard cheatsheet — top-right, below the X */}
+      {showKeys ? (
+        <div className="af-keys-panel" role="complementary" aria-label="Keyboard shortcuts">
+          <div className="af-keys-head">
+            <span>Keyboard</span>
+            <button className="af-keys-x" onClick={() => setShowKeys(false)} title="Hide shortcuts">–</button>
+          </div>
+          <div className="af-keys-list">
+            {phaseShortcuts.map(([k, v], i) => (
+              <div key={i} className="af-keys-row">
+                <kbd className="af-kbd">{k}</kbd>
+                <span className="af-keys-desc">{v}</span>
+              </div>
+            ))}
+          </div>
+          <div className="af-keys-foot">phase: <b>{phase}</b></div>
+        </div>
+      ) : (
+        <button className="af-keys-reopen" onClick={() => setShowKeys(true)} title="Show keyboard shortcuts">⌨</button>
+      )}
+
       {phase === 'result' && result && (
         <ResultPanel result={result} bait={selectedBait}
                      state={state}
@@ -592,9 +674,13 @@ function AfBoat({ phase, castPower, lure, fightDist, fishTugging, boatX = 0, boa
 
       {lineEnd && (
         <svg className="af-line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {/* Soft glow under-line for visibility against any background */}
           <line x1={rodTip.x} y1={rodTip.y} x2={lineEnd.x} y2={lineEnd.y}
-                stroke="rgba(255,255,255,.55)" strokeWidth=".18"
-                strokeDasharray=".6 .4" vectorEffect="non-scaling-stroke"/>
+                stroke="rgba(0,0,0,.35)" strokeWidth="4"
+                vectorEffect="non-scaling-stroke" strokeLinecap="round"/>
+          <line x1={rodTip.x} y1={rodTip.y} x2={lineEnd.x} y2={lineEnd.y}
+                stroke="rgba(255,255,255,.98)" strokeWidth="2"
+                vectorEffect="non-scaling-stroke" strokeLinecap="round"/>
         </svg>
       )}
 
@@ -618,19 +704,19 @@ function AfShadows({ shadows, hookedId, lure, fightDist, phase, fishTugging }) {
   return (
     <div className="af-shadow-zone">
       {shadows.map(s => {
-        // hide other shadows during fight (focus on hooked one)
-        if (phase === 'fight' && s.id !== hookedId) return null;
         const isHooked = s.id === hookedId;
+        // In fight phase, render non-hooked shadows as faded ambient swimmers.
         const x = phase === 'fight' && isHooked ? Math.max(20, fightDist + 20) : s.x;
         const y = phase === 'fight' && isHooked ? 60 : s.y;
         // Just flip horizontally — no angle tilt.
         // During fight, flip the hooked shadow to the opposite side.
         const baseFlip = s.vx > 0 ? -1 : 1;
         const flip = (phase === 'fight' && isHooked) ? -baseFlip : baseFlip;
+        const ambient = phase === 'fight' && !isHooked;
         return (
           <div
             key={s.id}
-            className={`af-shadow size-${s.size} ${s.interested ? 'interested' : ''} ${isHooked && fishTugging ? 'tugging' : ''}`}
+            className={`af-shadow size-${s.size} ${s.interested ? 'interested' : ''} ${isHooked && fishTugging ? 'tugging' : ''} ${ambient ? 'ambient' : ''}`}
             style={{
               left: x + '%',
               top: y + '%',
@@ -722,35 +808,46 @@ function CastMeter({ castPower, onPressStart, onPressEnd, onCancel }) {
     <>
       <button className="af-close-x" onClick={onCancel}>×</button>
 
-      {/* The diegetic glowing arc emerging from rod */}
-      <svg className="af-arc-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="arcGrad" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%"  stopColor="#fff5dd" stopOpacity="0"/>
-            <stop offset="40%" stopColor="#fff5dd" stopOpacity=".4"/>
-            <stop offset="100%" stopColor={inMaxZone ? "#ffe680" : "#fff5dd"} stopOpacity=".9"/>
-          </linearGradient>
-        </defs>
-        {/* arc from rod tip (25,14) sweeping up-right based on power */}
-        <path
-          d={`M 25 14 Q 50 ${14 - 6 - castPower * 8} ${25 + castPower * 60} ${14 + castPower * 6}`}
-          fill="none"
-          stroke="url(#arcGrad)"
-          strokeWidth={.4 + castPower * .4}
-          vectorEffect="non-scaling-stroke"
-          strokeLinecap="round"
-          opacity={.4 + castPower * .6}
-        />
-      </svg>
+      {/* Power preview — only render once the player starts charging */}
+      {castPower > 0 && (
+        <>
+          <svg className="af-arc-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="arcGrad" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%"  stopColor="#fff5dd" stopOpacity="0"/>
+                <stop offset="40%" stopColor="#fff5dd" stopOpacity=".7"/>
+                <stop offset="100%" stopColor={inMaxZone ? "#ffe680" : "#fff5dd"} stopOpacity="1"/>
+              </linearGradient>
+            </defs>
+            <path
+              d={`M 25 14 Q 50 ${14 - 6 - castPower * 8} ${25 + castPower * 60} ${14 + castPower * 6}`}
+              fill="none"
+              stroke="rgba(0,0,0,.45)"
+              strokeWidth={2.4 + castPower * 1.6}
+              vectorEffect="non-scaling-stroke"
+              strokeLinecap="round"
+            />
+            <path
+              d={`M 25 14 Q 50 ${14 - 6 - castPower * 8} ${25 + castPower * 60} ${14 + castPower * 6}`}
+              fill="none"
+              stroke="url(#arcGrad)"
+              strokeWidth={1.4 + castPower * 1.6}
+              vectorEffect="non-scaling-stroke"
+              strokeLinecap="round"
+              opacity={.6 + castPower * .4}
+            />
+          </svg>
 
-      {/* signal bars near rod tip */}
-      <div className="af-power-bars">
-        {Array.from({ length: bars }).map((_, i) => (
-          <div key={i}
-               className={`af-pbar ${i < filled ? 'on' : ''} ${i >= bars * CAST_MAX_ZONE[0] ? 'max-zone' : ''}`}
-               style={{ height: 6 + i * 4 }}/>
-        ))}
-      </div>
+          {/* signal bars near rod tip */}
+          <div className="af-power-bars">
+            {Array.from({ length: bars }).map((_, i) => (
+              <div key={i}
+                   className={`af-pbar ${i < filled ? 'on' : ''} ${i >= bars * CAST_MAX_ZONE[0] ? 'max-zone' : ''}`}
+                   style={{ height: 6 + i * 4 }}/>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* charge instruction + click area */}
       <div className="af-charge-overlay"
