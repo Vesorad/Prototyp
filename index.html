@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Fisher's Bay — prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -70,5 +70,32 @@
 <script type="text/babel" src="store-screen.jsx"></script>
 <script type="text/babel" src="ending-screen.jsx"></script>
 <script type="text/babel" src="app.jsx"></script>
+
+<script>
+  // Blokada zoom — Ctrl+Scroll i Ctrl+/-/0
+  document.addEventListener('wheel', function(e) {
+    if (e.ctrlKey) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+      e.preventDefault();
+    }
+  });
+
+  // Skalowanie do 1920x1080
+  function scaleApp() {
+    var root = document.getElementById('root');
+    var scaleX = window.innerWidth / 1920;
+    var scaleY = window.innerHeight / 1080;
+    var scale = Math.min(scaleX, scaleY);
+    var left = (window.innerWidth - 1920 * scale) / 2;
+    var top = (window.innerHeight - 1080 * scale) / 2;
+    root.style.transform = 'scale(' + scale + ')';
+    root.style.left = left + 'px';
+    root.style.top = top + 'px';
+  }
+  document.addEventListener('DOMContentLoaded', scaleApp);
+  window.addEventListener('resize', scaleApp);
+</script>
 </body>
 </html>

@@ -17,11 +17,18 @@
   font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;}
-html, body { margin:0; padding:0; height:100%; background:#0a1d33; color:var(--ink); overflow:hidden;}
+html, body { margin:0; padding:0; width:100%; height:100%; background:#0a1d33; color:var(--ink); overflow:hidden;}
 body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif; }
 
 /* ============== STAGE ============== */
-#root, .stage{ width:100vw; height:100vh; position:relative; overflow:hidden; }
+#root {
+  width: 1920px;
+  height: 1080px;
+  position: absolute;
+  transform-origin: top left;
+  overflow: hidden;
+}
+.stage{ width:100%; height:100%; position:relative; overflow:hidden; }
 .stage{
   background: #0a1d33;
 }
