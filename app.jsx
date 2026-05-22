@@ -266,6 +266,9 @@ function App() {
       afBgX={t.afBgX || 0}
       afBgY={t.afBgY || 0}
       afBgScale={t.afBgScale || 1}
+      afLureSink={t.afLureSink ?? 14}
+      afReelGuide={t.afReelGuide ?? 22}
+      afReelFight={t.afReelFight ?? 18}
       onAfTweak={(p) => {
         if (p.shadowRadius !== undefined) setTweak('afShadowRadius', p.shadowRadius);
         if (p.boatX !== undefined) setTweak('afBoatX', p.boatX);
@@ -277,11 +280,16 @@ function App() {
         if (p.bgX !== undefined) setTweak('afBgX', p.bgX);
         if (p.bgY !== undefined) setTweak('afBgY', p.bgY);
         if (p.bgScale !== undefined) setTweak('afBgScale', p.bgScale);
+        if (p.lureSink !== undefined) setTweak('afLureSink', p.lureSink);
+        if (p.reelGuide !== undefined) setTweak('afReelGuide', p.reelGuide);
+        if (p.reelFight !== undefined) setTweak('afReelFight', p.reelFight);
       }}
     />;
   if (screen === 'store') sceneEl = <StoreScreen
       state={state} setState={setState}
       onLeave={handleLeaveStore}
+      helgaSkin={t.helgaSkin || 'helga'}
+      onHelgaSkin={(v) => setTweak('helgaSkin', v)}
       helgaX={t.helgaX || 0}
       helgaY={t.helgaY || 0}
       helgaScale={t.helgaScale || 1}

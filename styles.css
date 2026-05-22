@@ -2394,6 +2394,84 @@ body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   border-radius: 14px;
 }
 
+/* --- Skin picker (girl chooser inside flirt tab) --- */
+.rs-skin-picker{
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px;
+  background:
+    repeating-linear-gradient(135deg, rgba(0,0,0,.05) 0 3px, transparent 3px 7px),
+    rgba(0,0,0,.08);
+  border: 2px dashed var(--rs-wood-2);
+  border-radius: 14px;
+}
+.rs-skin-hint{
+  font-size: 11px;
+  color: var(--rs-wood-3);
+  opacity: .6;
+  letter-spacing: .04em;
+}
+.rs-skin-label{
+  font-size: 11px; letter-spacing: .18em;
+  font-weight: 800;
+  color: var(--rs-wood-3);
+  text-transform: uppercase;
+}
+.rs-skin-row{
+  display: flex; gap: 14px;
+  align-items: stretch; justify-content: center;
+  width: 100%;
+}
+.rs-skin{
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
+  padding: 8px 6px 10px;
+  background: rgba(0,0,0,.18);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease, background .12s ease;
+  font-family: inherit;
+}
+.rs-skin img{
+  width: 72px; height: 72px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(255,245,221,.18);
+  background: #2d231b;
+  pointer-events: none;
+  transition: border-color .12s ease;
+}
+.rs-skin-name{
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--rs-wood-3);
+  text-transform: uppercase;
+}
+.rs-skin:hover{
+  background: rgba(0,0,0,.28);
+  transform: translateY(-1px);
+}
+.rs-skin:hover img{
+  border-color: rgba(255,245,221,.4);
+}
+.rs-skin.on{
+  background: rgba(232,182,71,.18);
+  border-color: rgba(232,182,71,.65);
+}
+.rs-skin.on img{
+  border-color: #e8b647;
+  box-shadow: 0 0 0 3px rgba(232,182,71,.18);
+}
+.rs-skin.on .rs-skin-name{
+  color: #ffe1a3;
+}
+
 /* --- Footer --- */
 .rs-footer{
   display: flex; gap: 10px; align-items: center;

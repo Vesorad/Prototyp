@@ -101,6 +101,28 @@ const CHARACTERS = {
   },
 };
 
+// ============== HELGA SKINS (shop girl picker) ==============
+const HELGA_SKINS = {
+  helga: {
+    id: 'helga',
+    name: 'Helga',
+    img: 'assets/characters/helga-portrait.png',
+    avatar: 'assets/characters/helga-avatar.png',
+  },
+  girl1: {
+    id: 'girl1',
+    name: 'Sandy',
+    img: 'assets/characters/girl1.png',
+    avatar: 'assets/characters/portrait1.png',
+  },
+  girl2: {
+    id: 'girl2',
+    name: 'Raven',
+    img: 'assets/characters/girl2.png',
+    avatar: 'assets/characters/portrait2.png',
+  },
+};
+
 // ============== PORTRAIT COMPONENT ==============
 function Portrait({ character, side = 'left' }) {
   const c = CHARACTERS[character];
@@ -200,6 +222,7 @@ Object.assign(window, {
   BAITS, COMMON_FISH, QUEST_FISH, SHOP_BAITS, SHOP_UPGRADES,
   TIER_LABELS,
   CHARACTERS,
+  HELGA_SKINS,
   rand, randInt, pickWeighted, fmtMoney,
   Portrait, useTypewriter, TopHud, useBlackout,
 });

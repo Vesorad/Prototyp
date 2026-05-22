@@ -2,7 +2,9 @@
 // Right-side tabbed panel modeled after the reference image.
 // The shop bg (assets/store/bg.png) carries the shopkeeper artwork.
 
-function StoreScreen({ state, setState, onLeave, helgaX = 0, helgaY = 0, helgaScale = 1, onHelgaPos }) {
+function StoreScreen({ state, setState, onLeave, helgaX = 0, helgaY = 0, helgaScale = 1, onHelgaPos,
+                       helgaSkin = 'helga', onHelgaSkin }) {
+  const skin = HELGA_SKINS[helgaSkin] || HELGA_SKINS.helga;
   const [tab, setTab] = React.useState('sell'); // sell | bait | upgrades | flirt
   const [selBaitId, setSelBaitId] = React.useState(SHOP_BAITS[0]?.id || null);
   const [selUpgradeId, setSelUpgradeId] = React.useState(SHOP_UPGRADES[0]?.id || null);
@@ -176,8 +178,8 @@ function StoreScreen({ state, setState, onLeave, helgaX = 0, helgaY = 0, helgaSc
 
   if (tab === 'flirt') {
     featured = {
-      img: 'assets/characters/helga-avatar.png',
-      name: 'HELGA',
+      img: skin.avatar,
+      name: skin.name.toUpperCase(),
       lines: [
         ['Mood', 'Friendly, sharp tongue'],
         ['Shift', 'Behind the counter'],
@@ -196,7 +198,9 @@ function StoreScreen({ state, setState, onLeave, helgaX = 0, helgaY = 0, helgaSc
       {/* TopHud intentionally omitted in store — quest card and money
           counter would overlap the panel (the panel shows money itself). */}
 
-      {flirting && <FlirtChat onClose={(result) => {
+      {flirting && <FlirtChat
+        skin={skin}
+        onClose={(result) => {
         setFlirting(false);
         if (result && result.cutscene) setFlirtCutscene(result.cutscene);
       }} />}
@@ -217,8 +221,8 @@ function StoreScreen({ state, setState, onLeave, helgaX = 0, helgaY = 0, helgaSc
       <div className="store-helga">
         <img
           className="store-helga-img"
-          src={CHARACTERS.helga.img}
-          alt="Helga"
+          src={skin.img}
+          alt={skin.name}
           draggable={false}
           style={{
             transform: `translate(${helgaX}px, ${helgaY}px) scale(${helgaScale})`,
@@ -300,9 +304,25 @@ function StoreScreen({ state, setState, onLeave, helgaX = 0, helgaY = 0, helgaSc
           </div>
         )}
 
-        {/* Empty state for tabs with no grid items */}
+        {/* Skin picker for flirt tab — pick which girl appears as the shopkeeper */}
         {grid.length === 0 && tab === 'flirt' && (
-          <div className="rs-empty">Helga is at the counter.  Pick the chat to flirt.</div>
+          <div className="rs-skin-picker">
+            <div className="rs-skin-label">PICK YOUR GIRL</div>
+            <div className="rs-skin-row">
+              {Object.values(HELGA_SKINS).map(s => (
+                <button
+                  key={s.id}
+                  className={`rs-skin ${helgaSkin === s.id ? 'on' : ''}`}
+                  onClick={() => onHelgaSkin && onHelgaSkin(s.id)}
+                  title={s.name}
+                >
+                  <img src={s.avatar} alt={s.name} draggable={false}/>
+                  <span className="rs-skin-name">{s.name}</span>
+                </button>
+              ))}
+            </div>
+            <div className="rs-skin-hint">She'll greet you in the chat.</div>
+          </div>
         )}
         {grid.length === 0 && tab === 'sell' && (
           <div className="rs-empty">The crate is empty.<br/>Sail out to catch something first.</div>

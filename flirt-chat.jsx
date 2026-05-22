@@ -74,7 +74,9 @@ const FLIRT_CUTSCENES = {
   p_open_c: 'assets/scenes/s_3.mp4',
 };
 
-function FlirtChat({ onClose }) {
+function FlirtChat({ onClose, skin }) {
+  const skinAvatar = skin?.avatar || 'assets/characters/helga-avatar.png';
+  const skinName = skin?.name || 'Helga';
   const [history, setHistory] = React.useState([]);  // [{from, text}, ...]
   const [currentId, setCurrentId] = React.useState(FLIRT_TREE.start);
   const [waiting, setWaiting] = React.useState(true); // typing indicator
@@ -148,10 +150,10 @@ function FlirtChat({ onClose }) {
         {/* header */}
         <div className="flirt-header">
           <div className="flirt-avatar">
-            <img className="flirt-avatar-img" src="assets/characters/helga-avatar.png" alt="Helga" />
+            <img className="flirt-avatar-img" src={skinAvatar} alt={skinName} />
           </div>
           <div className="flirt-header-meta">
-            <div className="flirt-header-name">Helga</div>
+            <div className="flirt-header-name">{skinName}</div>
             <div className="flirt-header-status">
               <span className="dot"></span>
               {waiting ? 'typing…' : 'online · at the counter'}
@@ -168,7 +170,7 @@ function FlirtChat({ onClose }) {
             <div key={m.id} className={`msg ${m.from}`}>
               {m.from === 'helga' && (
                 <div className="msg-avatar">
-                  <img className="flirt-avatar-img" src="assets/characters/helga-avatar.png" alt="" />
+                  <img className="flirt-avatar-img" src={skinAvatar} alt="" />
                 </div>
               )}
               <div className="msg-bubble">{m.text}</div>
@@ -178,7 +180,7 @@ function FlirtChat({ onClose }) {
           {waiting && (
             <div className="msg helga">
               <div className="msg-avatar">
-                <img className="flirt-avatar-img" src="assets/characters/helga-avatar.png" alt="" />
+                <img className="flirt-avatar-img" src={skinAvatar} alt="" />
               </div>
               <div className="msg-bubble typing">
                 <span></span><span></span><span></span>

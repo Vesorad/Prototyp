@@ -26,6 +26,7 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
                        afShadowRadius = 1, afBoatX = 0, afBoatY = 0, afBoatAnim = true,
                        afRodX = 25, afRodY = 14,
                        afBgImage = 'sky', afBgX = 0, afBgY = 0, afBgScale = 1,
+                       afLureSink = LURE_SINK, afReelGuide = REEL_BACK_RATE, afReelFight = REEL_DISTANCE_RATE,
                        onAfTweak }) {
   const ownsBlood = state.hasQuestBait && state.questBaits > 0;
   const availableBaits = React.useMemo(() => {
@@ -137,11 +138,14 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
         setLure(lr => {
           let { x, y } = lr;
           const reeling = reelingRef.current;
+          // proportional lift: scales with reel speed (matches original 22:18 ratio)
+          const liftRate = afReelGuide * (REEL_LIFT / REEL_BACK_RATE);
           if (reeling) {
-            x -= REEL_BACK_RATE * dt;
-            y -= REEL_LIFT * dt;
+            x -= afReelGuide * dt;
+            y -= liftRate * dt;
           } else {
-            y += (selectedBait?.sinkSpeed || LURE_SINK) * 0.014 * 100 * dt;
+            const sink = (selectedBait?.sinkSpeed ?? afLureSink);
+            y += sink * 0.014 * 100 * dt;
           }
           y = Math.max(24, Math.min(92, y));
           x = Math.max(20, Math.min(96, x));
@@ -168,7 +172,7 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
     return () => {
       cancelAnimationFrame(rafId);
     };
-  }, [phase, gameSpeed, selectedBait, hookedShadow]);
+  }, [phase, gameSpeed, selectedBait, hookedShadow, afReelGuide, afLureSink]);
 
   // bite detection — any lure↔shadow overlap = instant hookup
   React.useEffect(() => {
@@ -225,7 +229,7 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
       setFightDist(d => {
         if (debugFreezeDist) return d;
         let next = d;
-        if (reeling && !tugging) next -= REEL_DISTANCE_RATE * dt;
+        if (reeling && !tugging) next -= afReelFight * dt;
         if (!reeling && tugging) next += FLEE_DISTANCE_RATE * dt;
         return Math.max(0, Math.min(80, next));
       });
@@ -246,7 +250,7 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
       cancelAnimationFrame(rafId);
       clearTimeout(cycleTimeoutId);
     };
-  }, [phase, gameSpeed, debugFreezeTension, debugFreezeDist]);
+  }, [phase, gameSpeed, debugFreezeTension, debugFreezeDist, afReelFight]);
 
   // fight resolution
   React.useEffect(() => {
@@ -623,9 +627,40 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
               {afBoatAnim ? '● ON' : '○ OFF (static)'}
             </button>
           </div>
+
+          <div className="af-tools-section">🎣 Mechanics</div>
+          <div className="af-tools-row">
+            <label>Sink ↓</label>
+            <input type="range" min="0" max="60" step="0.5"
+                   value={afLureSink}
+                   onChange={(e) => onAfTweak({ lureSink: parseFloat(e.target.value) })}/>
+            <input type="number" min="0" max="60" step="0.5"
+                   value={afLureSink}
+                   onChange={(e) => onAfTweak({ lureSink: parseFloat(e.target.value) || 0 })}/>
+          </div>
+          <div className="af-tools-row">
+            <label>Reel (guide)</label>
+            <input type="range" min="0" max="80" step="0.5"
+                   value={afReelGuide}
+                   onChange={(e) => onAfTweak({ reelGuide: parseFloat(e.target.value) })}/>
+            <input type="number" min="0" max="80" step="0.5"
+                   value={afReelGuide}
+                   onChange={(e) => onAfTweak({ reelGuide: parseFloat(e.target.value) || 0 })}/>
+          </div>
+          <div className="af-tools-row">
+            <label>Reel (fight)</label>
+            <input type="range" min="0" max="60" step="0.5"
+                   value={afReelFight}
+                   onChange={(e) => onAfTweak({ reelFight: parseFloat(e.target.value) })}/>
+            <input type="number" min="0" max="60" step="0.5"
+                   value={afReelFight}
+                   onChange={(e) => onAfTweak({ reelFight: parseFloat(e.target.value) || 0 })}/>
+          </div>
+
           <div className="af-tools-actions">
             <button onClick={() => onAfTweak({ bgImage: 'sky', bgX: 0, bgY: 0, bgScale: 1 })}>↻ Reset bg</button>
             <button onClick={() => onAfTweak({ shadowRadius: 1, boatX: 0, boatY: 0, boatAnim: true })}>↻ Reset boat</button>
+            <button onClick={() => onAfTweak({ lureSink: 14, reelGuide: 22, reelFight: 18 })}>↻ Reset mech</button>
           </div>
         </div>
       )}
