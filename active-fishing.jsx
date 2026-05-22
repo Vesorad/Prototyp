@@ -46,9 +46,9 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
   const [result, setResult] = React.useState(null);
 
   // Tools panel (visible always while in active fishing if onAfTweak prop is supplied)
-  //const [toolsShow, setToolsShow] = React.useState(true);
+  const [toolsShow, setToolsShow] = React.useState(false);
   // Rod-tip tools panel (right side)
- // const [rodToolsShow, setRodToolsShow] = React.useState(true);
+  const [rodToolsShow, setRodToolsShow] = React.useState(false);
 
   // Debug tools (visible in fight phase)
   const [debugFreezeTension, setDebugFreezeTension] = React.useState(false);
