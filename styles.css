@@ -381,6 +381,9 @@ body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   position:absolute; left:-10%; right:-10%; top:0; bottom:0;
   background: url('assets/water.png') center bottom / cover no-repeat;
   will-change: transform;
+  /* individual CSS transforms stack with the animation transform */
+  translate: var(--water-x, 0px) var(--water-y, 0px);
+  scale: var(--water-scale, 1);
 }
 .water-layer .water-tile.back{
   animation: waterPan 14s ease-in-out infinite alternate;
@@ -391,6 +394,9 @@ body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   animation: waterPanFast 8s ease-in-out infinite alternate;
   mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 100%);
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 100%);
+}
+.water-layer.no-anim .water-tile{
+  animation: none !important;
 }
 @keyframes waterPan{
   0% { transform: translateX(-2%) translateY(0);}
@@ -1264,7 +1270,7 @@ body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 /* === Tools panel (radius + boat) === */
 .af-tools-panel{
   position: absolute;
-  right: 16px; top: 70px;
+  left: 16px; top: 70px;
   z-index: 250;
   width: 260px;
   background: rgba(20,12,8,.92);
@@ -1340,7 +1346,7 @@ body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 .af-tools-actions button:hover{ background: rgba(232,182,71,.15);}
 .af-tools-reopen{
   position: absolute;
-  right: 16px; top: 70px;
+  left: 16px; top: 70px;
   z-index: 250;
   background: rgba(20,12,8,.85); color: #fff5dd;
   border: 1px solid rgba(255,245,221,.18);
@@ -1349,6 +1355,7 @@ body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   font-family: "JetBrains Mono", monospace; font-size: 10px;
   text-transform: uppercase; cursor: pointer;
 }
+.af-tools-reopen:hover{ background: rgba(232,182,71,.2); border-color: #e8b647;}
 
 /* === END ACTIVE FISHING ============== */
 
@@ -1773,6 +1780,30 @@ body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   cursor: pointer;
 }
 .pos-tool-reopen:hover{ background: rgba(232,182,71,.2); border-color: rgba(232,182,71,.4);}
+
+.pos-tool-wide{
+  width: 280px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+.pos-tool-group{
+  margin-top: 10px;
+  padding: 10px 10px 6px;
+  border: 1px solid rgba(255,245,221,.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,.02);
+}
+.pos-tool-group + .pos-tool-group{
+  margin-top: 8px;
+}
+.pos-tool-group-title{
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #e8b647;
+  margin-bottom: 8px;
+}
 
 /* ============== TWEAK / debug nudge button ============== */
 .tweak-hint{
@@ -2577,3 +2608,38 @@ body { font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   color: var(--gold);
   text-shadow: 0 1px 0 rgba(0,0,0,.4);
 }
+
+
+/* ============== ACTIVE FISHING: ROD TIP TOOLS (right side) ============== */
+.af-rod-tools-panel{
+  position: absolute;
+  right: 16px; bottom: 16px;
+  z-index: 250;
+  width: 240px;
+  background: rgba(20,12,8,.92);
+  color: #fff5dd;
+  border: 1px solid rgba(255,245,221,.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.4);
+}
+.af-rod-tools-reopen{
+  position: absolute;
+  right: 16px; bottom: 16px;
+  z-index: 250;
+  background: rgba(20,12,8,.85); color: #fff5dd;
+  border: 1px solid rgba(255,245,221,.18);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  text-transform: uppercase; cursor: pointer;
+}
+.af-rod-tools-reopen:hover{ background: rgba(232,182,71,.2); border-color: #e8b647;}
+
+/* Reuse the .af-tools-* row/head/action styles for the rod panel */
+.af-rod-tools-panel .af-tools-row,
+.af-rod-tools-panel .af-tools-head,
+.af-rod-tools-panel .af-tools-actions{ /* inherits from existing rules */ }

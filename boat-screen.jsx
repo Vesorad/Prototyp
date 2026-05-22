@@ -75,7 +75,8 @@ function CloudLayer() {
 
 function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
                     boatX = 0, boatY = 0, boatScale = 1, onBoatPos,
-                    skyX = 0, skyY = 0, skyScale = 1, skyAnim = true, onSkyPos }) {
+                    skyX = 0, skyY = 0, skyScale = 1, skyAnim = true, onSkyPos,
+                    waterX = 0, waterY = 0, waterScale = 1, waterAnim = true, onWaterPos }) {
   const [caughtPopups, setCaughtPopups] = React.useState([]);
   const [showCapFull, setShowCapFull] = React.useState(false);
   const [sailing, setSailing] = React.useState(null); // 'in' | 'out' | null
@@ -156,7 +157,14 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
       </div>
 
       {/* water layer with parallax + shimmer */}
-      <div className="water-layer">
+      <div
+        className={`water-layer ${waterAnim ? '' : 'no-anim'}`}
+        style={{
+          '--water-x': waterX + 'px',
+          '--water-y': waterY + 'px',
+          '--water-scale': waterScale,
+        }}
+      >
         <div className="water-tile back"></div>
         <div className="water-tile front"></div>
         <div className="water-shimmer"></div>
@@ -217,63 +225,120 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
 
       <div className="vignette"></div>
 
-      {/* Sky position + animation toggle */}
-      {posTool && onSkyPos && (
-        <div className="pos-tool">
+      {/* Sky + Water position tool */}
+      {posTool && (onSkyPos || onWaterPos) && (
+        <div className="pos-tool pos-tool-wide">
           <div className="pos-tool-head">
-            <span className="pos-tool-title">Sky position</span>
+            <span className="pos-tool-title">Scene layers</span>
             <button className="pos-tool-close" onClick={() => setPosTool(false)} title="hide">×</button>
           </div>
-          <div className="pos-tool-row">
-            <label>X</label>
-            <input
-              type="range" min="-600" max="600" step="1" value={skyX}
-              onChange={(e) => onSkyPos({ x: parseInt(e.target.value) })}
-            />
-            <input
-              type="number" value={skyX} step="1"
-              onChange={(e) => onSkyPos({ x: parseInt(e.target.value) || 0 })}
-            />
-          </div>
-          <div className="pos-tool-row">
-            <label>Y</label>
-            <input
-              type="range" min="-400" max="400" step="1" value={skyY}
-              onChange={(e) => onSkyPos({ y: parseInt(e.target.value) })}
-            />
-            <input
-              type="number" value={skyY} step="1"
-              onChange={(e) => onSkyPos({ y: parseInt(e.target.value) || 0 })}
-            />
-          </div>
-          <div className="pos-tool-row">
-            <label>Scale</label>
-            <input
-              type="range" min="0.3" max="3" step="0.05" value={skyScale}
-              onChange={(e) => onSkyPos({ scale: parseFloat(e.target.value) })}
-            />
-            <input
-              type="number" value={skyScale} step="0.05"
-              onChange={(e) => onSkyPos({ scale: parseFloat(e.target.value) || 1 })}
-            />
-          </div>
-          <div className="pos-tool-row" style={{gridTemplateColumns:'40px 1fr'}}>
-            <label>Anim</label>
-            <button
-              className="pos-tool-toggle"
-              onClick={() => onSkyPos({ anim: !skyAnim })}
-            >
-              {skyAnim ? '● ON  (drift)' : '○ OFF (static)'}
-            </button>
-          </div>
-          <div className="pos-tool-actions">
-            <button onClick={() => onSkyPos({ x: 0, y: 0, scale: 1, anim: true })}>↻ Reset</button>
-            <span className="pos-tool-hint">live preview</span>
-          </div>
+
+          {onSkyPos && (
+            <div className="pos-tool-group">
+              <div className="pos-tool-group-title">☁ Sky</div>
+              <div className="pos-tool-row">
+                <label>X</label>
+                <input
+                  type="range" min="-600" max="600" step="1" value={skyX}
+                  onChange={(e) => onSkyPos({ x: parseInt(e.target.value) })}
+                />
+                <input
+                  type="number" value={skyX} step="1"
+                  onChange={(e) => onSkyPos({ x: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="pos-tool-row">
+                <label>Y</label>
+                <input
+                  type="range" min="-400" max="400" step="1" value={skyY}
+                  onChange={(e) => onSkyPos({ y: parseInt(e.target.value) })}
+                />
+                <input
+                  type="number" value={skyY} step="1"
+                  onChange={(e) => onSkyPos({ y: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="pos-tool-row">
+                <label>Scale</label>
+                <input
+                  type="range" min="0.3" max="3" step="0.05" value={skyScale}
+                  onChange={(e) => onSkyPos({ scale: parseFloat(e.target.value) })}
+                />
+                <input
+                  type="number" value={skyScale} step="0.05"
+                  onChange={(e) => onSkyPos({ scale: parseFloat(e.target.value) || 1 })}
+                />
+              </div>
+              <div className="pos-tool-row" style={{gridTemplateColumns:'40px 1fr'}}>
+                <label>Anim</label>
+                <button
+                  className="pos-tool-toggle"
+                  onClick={() => onSkyPos({ anim: !skyAnim })}
+                >
+                  {skyAnim ? '● ON  (drift)' : '○ OFF (static)'}
+                </button>
+              </div>
+              <div className="pos-tool-actions">
+                <button onClick={() => onSkyPos({ x: 0, y: 0, scale: 1, anim: true })}>↻ Reset sky</button>
+              </div>
+            </div>
+          )}
+
+          {onWaterPos && (
+            <div className="pos-tool-group">
+              <div className="pos-tool-group-title">≋ Water</div>
+              <div className="pos-tool-row">
+                <label>X</label>
+                <input
+                  type="range" min="-600" max="600" step="1" value={waterX}
+                  onChange={(e) => onWaterPos({ x: parseInt(e.target.value) })}
+                />
+                <input
+                  type="number" value={waterX} step="1"
+                  onChange={(e) => onWaterPos({ x: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="pos-tool-row">
+                <label>Y</label>
+                <input
+                  type="range" min="-400" max="400" step="1" value={waterY}
+                  onChange={(e) => onWaterPos({ y: parseInt(e.target.value) })}
+                />
+                <input
+                  type="number" value={waterY} step="1"
+                  onChange={(e) => onWaterPos({ y: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="pos-tool-row">
+                <label>Scale</label>
+                <input
+                  type="range" min="0.3" max="3" step="0.05" value={waterScale}
+                  onChange={(e) => onWaterPos({ scale: parseFloat(e.target.value) })}
+                />
+                <input
+                  type="number" value={waterScale} step="0.05"
+                  onChange={(e) => onWaterPos({ scale: parseFloat(e.target.value) || 1 })}
+                />
+              </div>
+              <div className="pos-tool-row" style={{gridTemplateColumns:'40px 1fr'}}>
+                <label>Anim</label>
+                <button
+                  className="pos-tool-toggle"
+                  onClick={() => onWaterPos({ anim: !waterAnim })}
+                >
+                  {waterAnim ? '● ON  (parallax)' : '○ OFF (static)'}
+                </button>
+              </div>
+              <div className="pos-tool-actions">
+                <button onClick={() => onWaterPos({ x: 0, y: 0, scale: 1, anim: true })}>↻ Reset water</button>
+                <span className="pos-tool-hint">live preview</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {!posTool && (
-        <button className="pos-tool-reopen" onClick={() => setPosTool(true)} style={{display:'none'}}>⇲ Sky pos</button>
+        <button className="pos-tool-reopen" onClick={() => setPosTool(true)}>⇲ Layers</button>
       )}
     </div>
   );

@@ -229,6 +229,16 @@ function App() {
         if (p.scale !== undefined) setTweak('skyScale', p.scale);
         if (p.anim !== undefined) setTweak('skyAnim', p.anim);
       }}
+      waterX={t.waterX || 0}
+      waterY={t.waterY || 0}
+      waterScale={t.waterScale || 1}
+      waterAnim={t.waterAnim !== false}
+      onWaterPos={(p) => {
+        if (p.x !== undefined) setTweak('waterX', p.x);
+        if (p.y !== undefined) setTweak('waterY', p.y);
+        if (p.scale !== undefined) setTweak('waterScale', p.scale);
+        if (p.anim !== undefined) setTweak('waterAnim', p.anim);
+      }}
     />;
   if (screen === 'active') sceneEl = <ActiveFishing
       state={state} setState={setState}
@@ -240,11 +250,15 @@ function App() {
       afBoatX={t.afBoatX ?? 0}
       afBoatY={t.afBoatY ?? 0}
       afBoatAnim={t.afBoatAnim !== false}
+      afRodX={t.afRodX ?? 25}
+      afRodY={t.afRodY ?? 14}
       onAfTweak={(p) => {
         if (p.shadowRadius !== undefined) setTweak('afShadowRadius', p.shadowRadius);
         if (p.boatX !== undefined) setTweak('afBoatX', p.boatX);
         if (p.boatY !== undefined) setTweak('afBoatY', p.boatY);
         if (p.boatAnim !== undefined) setTweak('afBoatAnim', p.boatAnim);
+        if (p.rodX !== undefined) setTweak('afRodX', p.rodX);
+        if (p.rodY !== undefined) setTweak('afRodY', p.rodY);
       }}
     />;
   if (screen === 'store') sceneEl = <StoreScreen

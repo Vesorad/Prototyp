@@ -24,6 +24,7 @@ const HOOK_TIMEOUT_S = 1.2;        // bite reaction window after first hookup si
 // ============== MAIN COMPONENT ==============
 function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFail,
                        afShadowRadius = 1, afBoatX = 0, afBoatY = 0, afBoatAnim = true,
+                       afRodX = 25, afRodY = 14,
                        onAfTweak }) {
   const ownsBlood = state.hasQuestBait && state.questBaits > 0;
   const availableBaits = React.useMemo(() => {
@@ -43,7 +44,9 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
   const [result, setResult] = React.useState(null);
 
   // Tools panel (visible always while in active fishing if onAfTweak prop is supplied)
-  const [toolsShow, setToolsShow] = React.useState(false);
+  const [toolsShow, setToolsShow] = React.useState(true);
+  // Rod-tip tools panel (right side)
+  const [rodToolsShow, setRodToolsShow] = React.useState(true);
 
   // Debug tools (visible in fight phase)
   const [debugFreezeTension, setDebugFreezeTension] = React.useState(false);
@@ -421,7 +424,8 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
       <AfBackdrop phase={phase} />
       <AfBoat phase={phase} castPower={castPower} lure={lure}
               fightDist={fightDist} fishTugging={fishTugging}
-              boatX={afBoatX} boatY={afBoatY} boatAnim={afBoatAnim}/>
+              boatX={afBoatX} boatY={afBoatY} boatAnim={afBoatAnim}
+              rodX={afRodX} rodY={afRodY}/>
 
       {/* Shadows visible from guide onward */}
       {(phase === 'guide' || phase === 'fight') && (
@@ -538,8 +542,8 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
       {toolsShow && onAfTweak && (
         <div className="af-tools-panel">
           <div className="af-tools-head">
-            <span>AF TOOLS</span>
-            <button onClick={() => setToolsShow(false)}>×</button>
+            <span>BOAT &amp; SHADOWS</span>
+            <button onClick={() => setToolsShow(false)} title="Hide tools">×</button>
           </div>
           <div className="af-tools-row">
             <label>Shadow radius</label>
@@ -581,7 +585,41 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
         </div>
       )}
       {!toolsShow && onAfTweak && (
-        <button className="af-tools-reopen" onClick={() => setToolsShow(true)} style={{display:'none'}}>⇲ tools</button>
+        <button className="af-tools-reopen" onClick={() => setToolsShow(true)}>⌨ boat</button>
+      )}
+
+      {/* Rod-tip tools panel — right side, below the keyboard cheatsheet */}
+      {rodToolsShow && onAfTweak && (
+        <div className="af-rod-tools-panel">
+          <div className="af-tools-head">
+            <span>ROD TIP</span>
+            <button onClick={() => setRodToolsShow(false)} title="Hide rod tools">×</button>
+          </div>
+          <div className="af-tools-row">
+            <label>Rod X</label>
+            <input type="range" min="0" max="100" step="0.5"
+                   value={afRodX}
+                   onChange={(e) => onAfTweak({ rodX: parseFloat(e.target.value) })}/>
+            <input type="number" min="0" max="100" step="0.5"
+                   value={afRodX}
+                   onChange={(e) => onAfTweak({ rodX: parseFloat(e.target.value) || 0 })}/>
+          </div>
+          <div className="af-tools-row">
+            <label>Rod Y</label>
+            <input type="range" min="0" max="100" step="0.5"
+                   value={afRodY}
+                   onChange={(e) => onAfTweak({ rodY: parseFloat(e.target.value) })}/>
+            <input type="number" min="0" max="100" step="0.5"
+                   value={afRodY}
+                   onChange={(e) => onAfTweak({ rodY: parseFloat(e.target.value) || 0 })}/>
+          </div>
+          <div className="af-tools-actions">
+            <button onClick={() => onAfTweak({ rodX: 25, rodY: 14 })}>↻ Reset rod</button>
+          </div>
+        </div>
+      )}
+      {!rodToolsShow && onAfTweak && (
+        <button className="af-rod-tools-reopen" onClick={() => setRodToolsShow(true)}>⌨ rod</button>
       )}
 
       {/* Keyboard cheatsheet — top-right, below the X */}
@@ -627,10 +665,12 @@ function AfBackdrop({ phase }) {
 }
 
 // ============== BOAT (small in upper-left) ==============
-function AfBoat({ phase, castPower, lure, fightDist, fishTugging, boatX = 0, boatY = 0, boatAnim = true }) {
-  // rod tip in % coords: ~25% x, ~14% y
+function AfBoat({ phase, castPower, lure, fightDist, fishTugging,
+                 boatX = 0, boatY = 0, boatAnim = true,
+                 rodX = 25, rodY = 14 }) {
+  // rod tip in % coords — driven by tweaks
   // line goes from rod tip to bobber landing / lure / hooked fish position
-  const rodTip = { x: 25, y: 14 };
+  const rodTip = { x: rodX, y: rodY };
   let lineEnd = null;
   if (phase === 'cast') {
     lineEnd = { x: 25 + (castPower * 55) * 0.5, y: 18 };
@@ -660,7 +700,7 @@ function AfBoat({ phase, castPower, lure, fightDist, fishTugging, boatX = 0, boa
     };
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
-  }, [phase, castPower]);
+  }, [phase, castPower, rodX, rodY]);
 
   return (
     <>
