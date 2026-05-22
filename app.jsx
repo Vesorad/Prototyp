@@ -222,12 +222,22 @@ function App() {
       skyX={t.skyX || 0}
       skyY={t.skyY || 0}
       skyScale={t.skyScale || 1}
-      skyAnim={t.skyAnim !== false}
+      skyAnim={t.skyAnim === true}
       onSkyPos={(p) => {
         if (p.x !== undefined) setTweak('skyX', p.x);
         if (p.y !== undefined) setTweak('skyY', p.y);
         if (p.scale !== undefined) setTweak('skyScale', p.scale);
         if (p.anim !== undefined) setTweak('skyAnim', p.anim);
+      }}
+      bgX={t.bgX || 0}
+      bgY={t.bgY || 0}
+      bgScale={t.bgScale || 1}
+      bgAnim={t.bgAnim === true}
+      onBgPos={(p) => {
+        if (p.x !== undefined) setTweak('bgX', p.x);
+        if (p.y !== undefined) setTweak('bgY', p.y);
+        if (p.scale !== undefined) setTweak('bgScale', p.scale);
+        if (p.anim !== undefined) setTweak('bgAnim', p.anim);
       }}
       waterX={t.waterX || 0}
       waterY={t.waterY || 0}
@@ -252,6 +262,10 @@ function App() {
       afBoatAnim={t.afBoatAnim !== false}
       afRodX={t.afRodX ?? 25}
       afRodY={t.afRodY ?? 14}
+      afBgImage={t.afBgImage || 'sky'}
+      afBgX={t.afBgX || 0}
+      afBgY={t.afBgY || 0}
+      afBgScale={t.afBgScale || 1}
       onAfTweak={(p) => {
         if (p.shadowRadius !== undefined) setTweak('afShadowRadius', p.shadowRadius);
         if (p.boatX !== undefined) setTweak('afBoatX', p.boatX);
@@ -259,6 +273,10 @@ function App() {
         if (p.boatAnim !== undefined) setTweak('afBoatAnim', p.boatAnim);
         if (p.rodX !== undefined) setTweak('afRodX', p.rodX);
         if (p.rodY !== undefined) setTweak('afRodY', p.rodY);
+        if (p.bgImage !== undefined) setTweak('afBgImage', p.bgImage);
+        if (p.bgX !== undefined) setTweak('afBgX', p.bgX);
+        if (p.bgY !== undefined) setTweak('afBgY', p.bgY);
+        if (p.bgScale !== undefined) setTweak('afBgScale', p.bgScale);
       }}
     />;
   if (screen === 'store') sceneEl = <StoreScreen

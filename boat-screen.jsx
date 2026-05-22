@@ -75,7 +75,8 @@ function CloudLayer() {
 
 function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
                     boatX = 0, boatY = 0, boatScale = 1, onBoatPos,
-                    skyX = 0, skyY = 0, skyScale = 1, skyAnim = true, onSkyPos,
+                    skyX = 0, skyY = 0, skyScale = 1, skyAnim = false, onSkyPos,
+                    bgX = 0, bgY = 0, bgScale = 1, bgAnim = false, onBgPos,
                     waterX = 0, waterY = 0, waterScale = 1, waterAnim = true, onWaterPos }) {
   const [caughtPopups, setCaughtPopups] = React.useState([]);
   const [showCapFull, setShowCapFull] = React.useState(false);
@@ -142,7 +143,7 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
     <div className={`scene boat-screen ${sceneDusk ? 'dusk' : ''}`} data-screen-label="03 Boat (idle)">
       <TopHud state={state} />
 
-      {/* sky layer with slow drift */}
+      {/* sky layer — back, static by default */}
       <div className={`sky-layer ${skyAnim ? 'animated' : ''}`}>
         <img
           className="sky-img"
@@ -151,12 +152,26 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
           draggable={false}
           style={{
             transform: `translate(${skyX}px, ${skyY}px) scale(${skyScale})`,
-            transformOrigin: 'center top',
+            transformOrigin: 'center center',
           }}
         />
       </div>
 
-      {/* water layer with parallax + shimmer */}
+      {/* background layer — mountains/lake, in front of sky, behind water */}
+      <div className={`bg-layer ${bgAnim ? 'animated' : ''}`}>
+        <img
+          className="bg-img"
+          src="assets/background.png"
+          alt=""
+          draggable={false}
+          style={{
+            transform: `translate(${bgX}px, ${bgY}px) scale(${bgScale})`,
+            transformOrigin: 'center center',
+          }}
+        />
+      </div>
+
+      {/* water layer — front, animated */}
       <div
         className={`water-layer ${waterAnim ? '' : 'no-anim'}`}
         style={{
@@ -165,9 +180,7 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
           '--water-scale': waterScale,
         }}
       >
-        <div className="water-tile back"></div>
         <div className="water-tile front"></div>
-        <div className="water-shimmer"></div>
       </div>
 
       <CloudLayer />
@@ -225,8 +238,8 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
 
       <div className="vignette"></div>
 
-      {/* Sky + Water position tool */}
-      {posTool && (onSkyPos || onWaterPos) && (
+      {/* Sky + Background + Water position tool */}
+      {posTool && (onSkyPos || onBgPos || onWaterPos) && (
         <div className="pos-tool pos-tool-wide">
           <div className="pos-tool-head">
             <span className="pos-tool-title">Scene layers</span>
@@ -235,7 +248,7 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
 
           {onSkyPos && (
             <div className="pos-tool-group">
-              <div className="pos-tool-group-title">☁ Sky</div>
+              <div className="pos-tool-group-title">☁ Sky <span className="pos-tool-z">z=0 · back</span></div>
               <div className="pos-tool-row">
                 <label>X</label>
                 <input
@@ -279,14 +292,65 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
                 </button>
               </div>
               <div className="pos-tool-actions">
-                <button onClick={() => onSkyPos({ x: 0, y: 0, scale: 1, anim: true })}>↻ Reset sky</button>
+                <button onClick={() => onSkyPos({ x: 0, y: 0, scale: 1, anim: false })}>↻ Reset sky</button>
+              </div>
+            </div>
+          )}
+
+          {onBgPos && (
+            <div className="pos-tool-group">
+              <div className="pos-tool-group-title">⛰ Background <span className="pos-tool-z">z=1 · mid</span></div>
+              <div className="pos-tool-row">
+                <label>X</label>
+                <input
+                  type="range" min="-600" max="600" step="1" value={bgX}
+                  onChange={(e) => onBgPos({ x: parseInt(e.target.value) })}
+                />
+                <input
+                  type="number" value={bgX} step="1"
+                  onChange={(e) => onBgPos({ x: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="pos-tool-row">
+                <label>Y</label>
+                <input
+                  type="range" min="-400" max="400" step="1" value={bgY}
+                  onChange={(e) => onBgPos({ y: parseInt(e.target.value) })}
+                />
+                <input
+                  type="number" value={bgY} step="1"
+                  onChange={(e) => onBgPos({ y: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="pos-tool-row">
+                <label>Scale</label>
+                <input
+                  type="range" min="0.3" max="3" step="0.05" value={bgScale}
+                  onChange={(e) => onBgPos({ scale: parseFloat(e.target.value) })}
+                />
+                <input
+                  type="number" value={bgScale} step="0.05"
+                  onChange={(e) => onBgPos({ scale: parseFloat(e.target.value) || 1 })}
+                />
+              </div>
+              <div className="pos-tool-row" style={{gridTemplateColumns:'40px 1fr'}}>
+                <label>Anim</label>
+                <button
+                  className="pos-tool-toggle"
+                  onClick={() => onBgPos({ anim: !bgAnim })}
+                >
+                  {bgAnim ? '● ON' : '○ OFF (static)'}
+                </button>
+              </div>
+              <div className="pos-tool-actions">
+                <button onClick={() => onBgPos({ x: 0, y: 0, scale: 1, anim: false })}>↻ Reset bg</button>
               </div>
             </div>
           )}
 
           {onWaterPos && (
             <div className="pos-tool-group">
-              <div className="pos-tool-group-title">≋ Water</div>
+              <div className="pos-tool-group-title">≋ Water <span className="pos-tool-z">z=2 · front</span></div>
               <div className="pos-tool-row">
                 <label>X</label>
                 <input

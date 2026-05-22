@@ -25,6 +25,7 @@ const HOOK_TIMEOUT_S = 1.2;        // bite reaction window after first hookup si
 function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFail,
                        afShadowRadius = 1, afBoatX = 0, afBoatY = 0, afBoatAnim = true,
                        afRodX = 25, afRodY = 14,
+                       afBgImage = 'sky', afBgX = 0, afBgY = 0, afBgScale = 1,
                        onAfTweak }) {
   const ownsBlood = state.hasQuestBait && state.questBaits > 0;
   const availableBaits = React.useMemo(() => {
@@ -421,7 +422,7 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
   // ===== Render =====
   return (
     <div className="af-scene" data-screen-label="04 Active Fishing">
-      <AfBackdrop phase={phase} />
+      <AfBackdrop phase={phase} bgImage={afBgImage} bgX={afBgX} bgY={afBgY} bgScale={afBgScale} />
       <AfBoat phase={phase} castPower={castPower} lure={lure}
               fightDist={fightDist} fishTugging={fishTugging}
               boatX={afBoatX} boatY={afBoatY} boatAnim={afBoatAnim}
@@ -542,11 +543,54 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
       {toolsShow && onAfTweak && (
         <div className="af-tools-panel">
           <div className="af-tools-head">
-            <span>BOAT &amp; SHADOWS</span>
+            <span>SCENE TOOLS</span>
             <button onClick={() => setToolsShow(false)} title="Hide tools">×</button>
           </div>
+
+          <div className="af-tools-section">☁ Backdrop (upper part)</div>
           <div className="af-tools-row">
-            <label>Shadow radius</label>
+            <label>Image</label>
+            <select
+              className="af-tools-select"
+              value={afBgImage}
+              onChange={(e) => onAfTweak({ bgImage: e.target.value })}
+            >
+              <option value="sky">sky (clouds + sun)</option>
+              <option value="background">background (mountains)</option>
+              <option value="water">water</option>
+            </select>
+          </div>
+          <div className="af-tools-row">
+            <label>Bg X</label>
+            <input type="range" min="-800" max="800" step="1"
+                   value={afBgX}
+                   onChange={(e) => onAfTweak({ bgX: parseInt(e.target.value) })}/>
+            <input type="number" min="-800" max="800" step="1"
+                   value={afBgX}
+                   onChange={(e) => onAfTweak({ bgX: parseInt(e.target.value) || 0 })}/>
+          </div>
+          <div className="af-tools-row">
+            <label>Bg Y</label>
+            <input type="range" min="-600" max="600" step="1"
+                   value={afBgY}
+                   onChange={(e) => onAfTweak({ bgY: parseInt(e.target.value) })}/>
+            <input type="number" min="-600" max="600" step="1"
+                   value={afBgY}
+                   onChange={(e) => onAfTweak({ bgY: parseInt(e.target.value) || 0 })}/>
+          </div>
+          <div className="af-tools-row">
+            <label>Bg scale</label>
+            <input type="range" min="0.3" max="3" step="0.05"
+                   value={afBgScale}
+                   onChange={(e) => onAfTweak({ bgScale: parseFloat(e.target.value) })}/>
+            <input type="number" min="0.3" max="3" step="0.05"
+                   value={afBgScale}
+                   onChange={(e) => onAfTweak({ bgScale: parseFloat(e.target.value) || 1 })}/>
+          </div>
+
+          <div className="af-tools-section">⛵ Boat &amp; shadows</div>
+          <div className="af-tools-row">
+            <label>Shadow R</label>
             <input type="range" min="0.3" max="4" step="0.1"
                    value={afShadowRadius}
                    onChange={(e) => onAfTweak({ shadowRadius: parseFloat(e.target.value) })}/>
@@ -580,12 +624,13 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
             </button>
           </div>
           <div className="af-tools-actions">
-            <button onClick={() => onAfTweak({ shadowRadius: 1, boatX: 0, boatY: 0, boatAnim: true })}>↻ Reset all</button>
+            <button onClick={() => onAfTweak({ bgImage: 'sky', bgX: 0, bgY: 0, bgScale: 1 })}>↻ Reset bg</button>
+            <button onClick={() => onAfTweak({ shadowRadius: 1, boatX: 0, boatY: 0, boatAnim: true })}>↻ Reset boat</button>
           </div>
         </div>
       )}
       {!toolsShow && onAfTweak && (
-        <button className="af-tools-reopen" onClick={() => setToolsShow(true)}>⌨ boat</button>
+        <button className="af-tools-reopen" onClick={() => setToolsShow(true)}>☰ scene</button>
       )}
 
       {/* Rod-tip tools panel — right side, below the keyboard cheatsheet */}
@@ -653,10 +698,26 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
 }
 
 // ============== BACKDROP ==============
-function AfBackdrop({ phase }) {
+function AfBackdrop({ phase, bgImage = 'sky', bgX = 0, bgY = 0, bgScale = 1 }) {
+  const src = {
+    sky: 'assets/sky.png',
+    background: 'assets/background.png',
+    water: 'assets/water.png',
+  }[bgImage] || 'assets/sky.png';
   return (
     <>
-      <div className="af-sky"></div>
+      <div className="af-sky">
+        <img
+          className="af-sky-img"
+          src={src}
+          alt=""
+          draggable={false}
+          style={{
+            transform: `translate(${bgX}px, ${bgY}px) scale(${bgScale})`,
+            transformOrigin: 'center center',
+          }}
+        />
+      </div>
       <div className="af-water"></div>
       <div className="af-waterline"></div>
       <div className="af-underwater"></div>
