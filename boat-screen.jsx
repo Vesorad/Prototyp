@@ -236,8 +236,6 @@ function BoatScreen({ state, setState, onGoActive, onReturnToBay, gameSpeed,
         </button>
       </div>
 
-      <div className="vignette"></div>
-
     </div>
   );
 }
