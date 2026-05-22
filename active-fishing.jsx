@@ -698,9 +698,7 @@ function ActiveFishing({ state, setState, gameSpeed, onClose, onCatch, onQuestFa
           </div>
         </div>
       )}
-      {!rodToolsShow && onAfTweak && (
-        <button className="af-rod-tools-reopen" onClick={() => setRodToolsShow(true)}>⌨ rod</button>
-      )}
+
 
       {/* Keyboard cheatsheet — top-right, below the X */}
       {showKeys ? (
