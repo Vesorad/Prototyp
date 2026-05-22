@@ -5,8 +5,8 @@
 const CAST_DURATION_MS = 1200;     // time to fill power bar
 const CAST_EASE = 1.8;             // pow(t, ease) — accelerates near top
 const CAST_MAX_ZONE = [0.88, 1.0]; // sweet-spot range
-const LURE_SINK = 14;              // %/s downward when idle
-const REEL_BACK_RATE = 22;         // %/s leftward toward boat when reeling
+const LURE_SINK = 7;              // %/s downward when idle
+const REEL_BACK_RATE = 5;         // %/s leftward toward boat when reeling
 const REEL_LIFT = 18;              // %/s upward when reeling (lure lifts)
 const SHADOW_COUNT = 9;
 // Bite mechanics: any lure ↔ shadow overlap = instant hookup, no rolls.
